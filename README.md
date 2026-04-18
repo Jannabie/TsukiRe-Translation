@@ -45,20 +45,29 @@ Tool teknis untuk menangani ekstraksi dan injeksi file `script_text.mrg`.
   </table>
 </div>
 
-### Preview Format Teks (.txt)
-Jika Anda lebih suka pengeditan manual via teks editor, hasil ekstraksinya berbentuk seperti ini:
-<div align="center">
-  <table style="margin-left: auto; margin-right: auto;">
-    <tr>
-      <td align="center"><b>Struktur File Teks Mentah</b></td>
-    </tr>
-    <tr>
-      <td><img src="https://i.imgur.com/yALew5y.png" width="500" alt="Preview TXT"></td>
-    </tr>
-  </table>
-  <br>
-  <i>Hasil ekstraksi mempertahankan ID Offset agar bisa di-repack dengan tepat.</i>
-</div>
+---
+
+## Panduan Pemasangan Patch (LayeredFS)
+LayeredFS memungkinkan kita memodifikasi file game secara *on-the-fly* tanpa merubah file ROM asli. Gunakan metode ini untuk mengetes hasil terjemahan Anda di Emulator atau Console.
+
+### 1. Persiapan Folder Mod
+Buka folder modifikasi dengan cara:
+- **Yuzu/Ryujinx:** Klik kanan pada game di daftar menu emulator, lalu pilih **Open Mod Data Location**.
+- Buat folder baru di dalamnya (bebas, contoh: `TsukiRe_Indo_Patch`).
+- Di dalam folder tersebut, buat folder lagi bernama `romfs`.
+
+### 2. Struktur File
+File hasil *repack* harus diletakkan sesuai dengan jalur aslinya di dalam folder `romfs`. Struktur akhirnya harus terlihat seperti ini:
+
+**Untuk Teks Script:**
+`.../TsukiRe_Indo_Patch/romfs/script/script_text.mrg`
+
+**Untuk Custom Font (Jika ada):**
+Pastikan diletakkan di dalam folder `ja`, `ja2`, atau `ja3` di bawah romfs.
+
+### 3. Lokasi Path Default (PC)
+- **Yuzu:** `%AppData%\Roaming\yuzu\load\010064101344A000\[Nama Mod]\romfs`
+- **Ryujinx:** `%AppData%\Roaming\Ryujinx\mods\contents\010064101344a000\[Nama Mod]\romfs`
 
 ---
 
@@ -76,7 +85,8 @@ Sistem pengemasan ulang pada tool ini memastikan stabilitas game dengan:
 1. Jalankan `tsuki_trans.py`.
 2. Buka file `script_text.mrg`.
 3. Pilih rute/scene pada panel kiri, lalu mulai menerjemahkan di kolom kanan.
-4. **Simpan Proyek:** Gunakan `.tsproj` untuk menyimpan progres kerja Anda.
+4. **Simpan Proyek:** Gunakan menu **File > Save Project (.tsproj)** untuk menyimpan progres.
+5. **Patch Game:** Gunakan menu **File > Patch MRG** untuk menghasilkan file `.mrg` baru.
 
 ### Menggunakan mrg_tool (Manual)
 **Ekstrak ke TXT:**
