@@ -9,7 +9,9 @@ Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Me
 
 ### Preview Interface
 <p align="center">
-  <img src="https://i.imgur.com/wxw2gl5.png" width="700" alt="GUI Preview">
+  <kbd>
+    <img src="https://i.imgur.com/wxw2gl5.png" width="750" alt="GUI Preview">
+  </kbd>
 </p>
 
 **Fitur Unggulan:**
@@ -25,14 +27,27 @@ Tool teknis untuk menangani ekstraksi dan injeksi file `script_text.mrg`.
 **Repository:** [Jannabie/TsukiRe-mrg-txt](https://github.com/Jannabie/TsukiRe-mrg-txt)
 
 ### Perbandingan Hasil Patch
-| Sebelum (Original) | Sesudah (Indonesian Patch) |
-| :---: | :---: |
-| ![Sebelum](https://i.imgur.com/Fl6iTqW.png) | ![Sesudah](https://i.imgur.com/eEtdYFB.jpeg) |
+<p align="center">
+  <table>
+    <tr>
+      <td align="center"><b>Sebelum (Original)</b></td>
+      <td align="center"><b>Sesudah (Indonesian Patch)</b></td>
+    </tr>
+    <tr>
+      <td><kbd><img src="https://i.imgur.com/Fl6iTqW.png" width="350"></kbd></td>
+      <td><kbd><img src="https://i.imgur.com/eEtdYFB.jpeg" width="350"></kbd></td>
+    </tr>
+  </table>
+</p>
 
 ### Preview Format Teks (.txt)
 Jika Anda lebih suka pengeditan manual via teks editor, hasil ekstraksinya berbentuk seperti ini:
 <p align="center">
-  <img src="https://i.imgur.com/yALew5y.png" width="450" alt="Preview TXT">
+  <kbd>
+    <img src="https://i.imgur.com/yALew5y.png" width="450" alt="Preview TXT">
+  </kbd>
+  <br>
+  <i>Hasil ekstraksi mempertahankan ID Offset agar bisa di-repack dengan tepat.</i>
 </p>
 
 ---
