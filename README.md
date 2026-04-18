@@ -4,7 +4,7 @@ Kumpulan alat (tools) untuk proses lokalisasi game **Tsukihime -A piece of blue 
 
 ---
 
-## 1. TsukiRe-Translator (GUI Editor)
+## TsukiRe-Translator (GUI Editor)
 Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Memungkinkan pengeditan langsung dengan tampilan dua kolom yang rapi dan terorganisir.
 
 ### Preview Interface
@@ -27,7 +27,7 @@ Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Me
 
 ---
 
-## 2. mrg_tool (CLI & GUI Extractor)
+## mrg_tool (CLI & GUI Extractor)
 Tool teknis untuk menangani ekstraksi dan injeksi file `script_text.mrg`.
 **Repository:** [Jannabie/TsukiRe-mrg-txt](https://github.com/Jannabie/TsukiRe-mrg-txt)
 
@@ -81,14 +81,9 @@ Sistem pengemasan ulang pada tool ini memastikan stabilitas game dengan:
 
 ## Cara Penggunaan
 
-### Menggunakan Translator GUI (Rekomendasi)
 1. Jalankan `tsuki_trans.py`.
 2. Buka file `script_text.mrg`.
 3. Pilih rute/scene pada panel kiri, lalu mulai menerjemahkan di kolom kanan.
 4. **Simpan Proyek:** Gunakan menu **File > Save Project (.tsproj)** untuk menyimpan progres.
 5. **Patch Game:** Gunakan menu **File > Patch MRG** untuk menghasilkan file `.mrg` baru.
 
-### Menggunakan mrg_tool (Manual)
-**Ekstrak ke TXT:**
-```bash
-python mrg_tool.py extract script_text.mrg output.txt
