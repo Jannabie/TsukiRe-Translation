@@ -14,11 +14,11 @@ Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Me
   </kbd>
 </p>
 
-**Fitur Unggulan:**
+**Fitur:**
 - **Visual Divider:** Garis pemisah vertikal antar kolom (Original | Translation) untuk keterbacaan yang maksimal.
 - **Direct Editing:** Klik dua kali pada kolom terjemahan untuk mengedit secara instan.
-- **Route Tree:** Navigasi berdasarkan rute (Arcueid, Ciel, Common) yang sudah disortir secara otomatis.
-- **Live Search:** Mencari baris dialog tertentu dengan cepat berdasarkan keyword.
+- **Route Tree:** Navigasi berdasarkan rute (Arcueid, Ciel, Common) yang sudah disortir secara otomatis menggunakan `scene_map.json`.
+- **Live Search:** Mencari baris dialog tertentu dengan cepat berdasarkan kata kunci.
 
 ---
 
@@ -27,8 +27,8 @@ Tool teknis untuk menangani ekstraksi dan injeksi file `script_text.mrg`.
 **Repository:** [Jannabie/TsukiRe-mrg-txt](https://github.com/Jannabie/TsukiRe-mrg-txt)
 
 ### Perbandingan Hasil Patch
-<p align="center">
-  <table>
+<div align="center">
+  <table style="margin-left: auto; margin-right: auto;">
     <tr>
       <td align="center"><b>Sebelum (Original)</b></td>
       <td align="center"><b>Sesudah (Indonesian Patch)</b></td>
@@ -38,7 +38,7 @@ Tool teknis untuk menangani ekstraksi dan injeksi file `script_text.mrg`.
       <td><kbd><img src="https://i.imgur.com/eEtdYFB.jpeg" width="350"></kbd></td>
     </tr>
   </table>
-</p>
+</div>
 
 ### Preview Format Teks (.txt)
 Jika Anda lebih suka pengeditan manual via teks editor, hasil ekstraksinya berbentuk seperti ini:
@@ -66,6 +66,7 @@ Sistem pengemasan ulang pada tool ini memastikan stabilitas game dengan:
 1. Jalankan `tsuki_trans.py`.
 2. Buka file `script_text.mrg`.
 3. Pilih rute/scene pada panel kiri, lalu mulai menerjemahkan di kolom kanan.
+4. **Simpan Proyek:** Gunakan `.tsproj` untuk menyimpan progres kerja Anda.
 
 ### Menggunakan mrg_tool (Manual)
 **Ekstrak ke TXT:**
