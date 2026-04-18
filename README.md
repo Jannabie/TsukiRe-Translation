@@ -1,6 +1,6 @@
 # TsukiRe-Translator & mrg_tool
 
-Kumpulan alat (tools) untuk proses lokalisasi game **Tsukihime -A piece of blue glass moon-** (Nintendo Switch). Mendukung ekstraksi, pengeditan teks secara langsung dengan GUI, hingga pengemasan ulang (*repacking*) ke format aslinya.
+Alat (tools) untuk proses lokalisasi game **Tsukihime -A piece of blue glass moon-** (Nintendo Switch). Mendukung ekstraksi, pengeditan teks secara langsung dengan GUI, hingga pengemasan ulang (*repacking*) ke format aslinya.
 
 ---
 
