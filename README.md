@@ -1,11 +1,11 @@
-# mrg_tool & TsukiRe-Translator
+# TsukiRe-Translator & mrg_tool
 
-Kumpulan alat (tools) untuk proses lokalisasi game **Tsukihime -A piece of blue glass moon-** (Nintendo Switch). Mendukung ekstraksi, pengeditan teks secara langsung, hingga pengemasan ulang (*repacking*) ke format aslinya.
+Kumpulan alat (tools) untuk proses lokalisasi game **Tsukihime -A piece of blue glass moon-** (Nintendo Switch). Mendukung ekstraksi, pengeditan teks secara langsung dengan GUI, hingga pengemasan ulang (*repacking*) ke format aslinya.
 
 ---
 
 ## 1. TsukiRe-Translator (GUI Editor)
-Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Memungkinkan pengeditan langsung dengan tampilan dua kolom yang rapi.
+Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Memungkinkan pengeditan langsung dengan tampilan dua kolom yang rapi dan terorganisir.
 
 ### Preview Interface
 <p align="center">
@@ -13,15 +13,16 @@ Alat utama untuk menerjemahkan tanpa perlu berurusan dengan file teks mentah. Me
 </p>
 
 **Fitur Unggulan:**
-- **Visual Divider:** Garis pemisah vertikal antar kolom (Original | Translation) untuk keterbacaan yang lebih baik.
+- **Visual Divider:** Garis pemisah vertikal antar kolom (Original | Translation) untuk keterbacaan yang maksimal.
 - **Direct Editing:** Klik dua kali pada kolom terjemahan untuk mengedit secara instan.
-- **Route Tree:** Navigasi mudah berdasarkan rute (Arcueid, Ciel, Common) yang sudah disortir.
-- **Live Search:** Mencari baris dialog tertentu dengan cepat.
+- **Route Tree:** Navigasi berdasarkan rute (Arcueid, Ciel, Common) yang sudah disortir secara otomatis.
+- **Live Search:** Mencari baris dialog tertentu dengan cepat berdasarkan keyword.
 
 ---
 
 ## 2. mrg_tool (CLI & GUI Extractor)
-Tool teknis untuk menangani file `script_text.mrg` (format arsip MZP/mrgd00).
+Tool teknis untuk menangani ekstraksi dan injeksi file `script_text.mrg`. 
+**Repository:** [Jannabie/TsukiRe-mrg-txt](https://github.com/Jannabie/TsukiRe-mrg-txt)
 
 ### Perbandingan Hasil Patch
 | Sebelum (Original) | Sesudah (Indonesian Patch) |
@@ -29,21 +30,29 @@ Tool teknis untuk menangani file `script_text.mrg` (format arsip MZP/mrgd00).
 | ![Sebelum](https://i.imgur.com/Fl6iTqW.png) | ![Sesudah](https://i.imgur.com/eEtdYFB.jpeg) |
 
 ### Preview Format Teks (.txt)
-Jika Anda lebih suka mengedit via teks editor (seperti Notepad++/VS Code), hasil ekstraksinya akan terlihat seperti ini:
+Jika Anda lebih suka pengeditan manual via teks editor, hasil ekstraksinya berbentuk seperti ini:
 <p align="center">
   <img src="https://i.imgur.com/yALew5y.png" width="450" alt="Preview TXT">
 </p>
 
 ---
 
-## Detail Teknis Repacker
-Sistem pengemasan ulang (`repack`) pada tool ini memastikan stabilitas game dengan:
-- **Auto-Offset Calculation:** Menghitung ulang tabel pointer secara otomatis saat panjang teks berubah.
-- **10-Section Management:** Menyusun ulang 10 bagian utama arsip MZP termasuk penyelarasan byte (*alignment*).
-- **Sector Precision:** Memastikan kompatibilitas penuh pada sektor `0x800` untuk emulator dan hardware asli.
+## Penjelasan Teknis Kompresor (Repacker)
+Sistem pengemasan ulang pada tool ini memastikan stabilitas game dengan:
+- **Auto-Offset Calculation:** Menghitung ulang seluruh tabel pointer secara otomatis saat panjang teks berubah agar tidak terjadi *crash*.
+- **10-Section Management:** Rekonstruksi 10 bagian utama arsip MZP termasuk penyelarasan byte (*alignment*) yang presisi.
+- **Sector Precision:** Mengikuti standar sektor `0x800` untuk kompatibilitas penuh pada emulator maupun hardware Switch asli.
 
 ---
 
 ## Cara Penggunaan
 
-### Meng
+### Menggunakan Translator GUI (Rekomendasi)
+1. Jalankan `tsuki_trans.py`.
+2. Buka file `script_text.mrg`.
+3. Pilih rute/scene pada panel kiri, lalu mulai menerjemahkan di kolom kanan.
+
+### Menggunakan mrg_tool (Manual)
+**Ekstrak ke TXT:**
+```bash
+python mrg_tool.py extract script_text.mrg output.txt
