@@ -56,10 +56,10 @@ Letakkan di folder `ja`, `ja2`, atau `ja3` di dalam romfs
 ### 3. Path Default (PC)
 
 Yuzu:
-%AppData%\Roaming\yuzu\load\010064101344A000\[Nama Mod]\romfs
+`%AppData%\Roaming\yuzu\load\010064101344A000\[Nama Mod]\romfs`
 
 Ryujinx:
-%AppData%\Roaming\Ryujinx\mods\contents\010064101344a000\[Nama Mod]\romfs
+`%AppData%\Roaming\Ryujinx\mods\contents\010064101344a000\[Nama Mod]\romfs`
 
 ---
 
