@@ -29,10 +29,10 @@ Repository:
 https://github.com/Jannabie/TsukiRe-mrg-txt
 
 ### Perbandingan Hasil Patch
-<p align="center">
-  <img src="https://i.imgur.com/Fl6iTqW.png" width="45%" />
-  <img src="https://i.imgur.com/eEtdYFB.jpeg" width="45%" />
-</p>
+
+| Sebelum | Sesudah |
+|--------|--------|
+| <img src="https://i.imgur.com/Fl6iTqW.png" width="100%"> | <img src="https://i.imgur.com/eEtdYFB.jpeg" width="100%"> |
 
 ---
 
@@ -41,8 +41,8 @@ https://github.com/Jannabie/TsukiRe-mrg-txt
 LayeredFS memungkinkan modifikasi file game tanpa mengubah ROM asli. Cocok untuk testing di emulator maupun console.
 
 ### 1. Siapkan Folder Mod
-- Yuzu / Ryujinx: Klik kanan game → Open Mod Data Location
-- Buat folder baru (contoh: `TsukiRe_Indo_Patch`)
+- Yuzu / Ryujinx: Klik kanan game → Open Mod Data Location  
+- Buat folder baru (contoh: `TsukiRe_Indo_Patch`)  
 - Di dalamnya, buat folder `romfs`
 
 ### 2. Struktur File
@@ -65,17 +65,17 @@ Ryujinx:
 
 ## Penjelasan Repacker
 
-- Auto-Offset Calculation: Pointer dihitung ulang otomatis saat teks berubah
-- 10-Section Management: Rebuild 10 bagian utama arsip MZP secara presisi
-- Sector Precision: Mengikuti standar sektor `0x800` agar kompatibel dengan emulator dan Switch asli
+- Auto-Offset Calculation: Pointer dihitung ulang otomatis saat teks berubah  
+- 10-Section Management: Rebuild 10 bagian utama arsip MZP secara presisi  
+- Sector Precision: Mengikuti standar sektor `0x800` agar kompatibel dengan emulator dan Switch asli  
 
 ---
 
 ## Cara Pakai
 
-1. Jalankan `tsuki_trans.py`
-2. Buka file `script_text.mrg`
-3. Pilih route/scene di panel kiri
-4. Terjemahkan di kolom kanan
-5. Simpan project melalui File → Save Project (.tsproj)
+1. Jalankan `tsuki_trans.py`  
+2. Buka file `script_text.mrg`  
+3. Pilih route/scene di panel kiri  
+4. Terjemahkan di kolom kanan  
+5. Simpan project melalui File → Save Project (.tsproj)  
 6. Patch lewat File → Patch MRG untuk menghasilkan file baru
