@@ -14,7 +14,7 @@ Tool utama buat nerjemahin tanpa harus ribet ngoprek file teks mentah. Semua bis
 </div>
 
 ### Fitur
-1.Visual Divider: Ada garis pemisah antara kolom Original dan Translation biar lebih gampang dibaca
+1. Visual Divider: Ada garis pemisah antara kolom Original dan Translation biar lebih gampang dibaca
 2. Direct Editing: Tinggal double click di kolom terjemahan buat langsung edit.
 3. Route Tree: Navigasi berdasarkan route (Arcueid, Ciel, Common) yang sudah otomatis tersusun dari `scene_map.json`
 4. Live Search: Cari dialog dengan cepat pakai kata kunci
