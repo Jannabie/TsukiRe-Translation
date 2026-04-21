@@ -26,9 +26,12 @@ Panel kiri menampilkan pohon navigasi berdasarkan route dan hari, panel kanan me
 
 ---
 
-## Cara Pakai
+## Memasang Patch ke Game (LayeredFS)
 
-Jalankan editor dengan:
+Letakkan `script_text.mrg` hasil repack di path berikut sesuai emulatornya, tanpa mengubah file ROM asli:
 
-```bash
-python tsuki_trans.py
+**Yuzu:** `%AppData%\Roaming\yuzu\load\010064101344A000\[Nama Mod]\romfs\script\`
+
+**Ryujinx:** `%AppData%\Roaming\Ryujinx\mods\contents\010064101344a000\[Nama Mod]\romfs\script\`
+
+
