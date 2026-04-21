@@ -4,6 +4,12 @@ Editor GUI untuk menerjemahkan script game **Tsukihime -A piece of blue glass mo
 
 ---
 
+## ⚠️ Catatan Penting
+* **Game Dump:** Game harus di-dump terlebih dahulu secara mandiri untuk mendapatkan file yang diperlukan.
+* **Versi Game:** Tool ini hanya bisa dilakukan dan berfungsi pada **Versi Jepang**.
+
+---
+
 ## Apa Ini?
 
 `tsuki_trans.py` adalah editor bergaya Translator++ yang membaca file `script_text.mrg`, menampilkan setiap string dialog bersama kolom terjemahannya, lalu bisa menulis ulang file MRG yang sudah dipatch dan siap digunakan.
@@ -26,45 +32,3 @@ Jalankan editor dengan:
 
 ```bash
 python tsuki_trans.py
-```
-
-Buka `script_text.mrg` lewat **File → Open MRG** atau `Ctrl+O`. Pilih scene dari panel kiri, klik dua kali sel terjemahan untuk mengedit, lalu tekan `Tab` untuk pindah ke baris berikutnya. Simpan progres lewat **File → Save Project** (`Ctrl+S`) yang menghasilkan file `.tsproj` — file ini bisa dibuka kembali kapan saja untuk melanjutkan kerja. Setelah selesai, hasilkan file MRG baru lewat **File → Patch MRG** (`Ctrl+P`).
-
-### Pintasan Keyboard
-
-| Tombol | Aksi |
-|---|---|
-| `Ctrl+O` | Buka file MRG |
-| `Ctrl+S` | Simpan project |
-| `Ctrl+P` | Patch dan hasilkan MRG baru |
-| `Ctrl+F` | Fokus ke kotak pencarian |
-| `Ctrl+G` | Lompat ke nomor offset tertentu |
-| `Ctrl+H` | Find & Replace global |
-| `Tab` | Simpan dan pindah ke baris berikutnya |
-| `Ctrl+Enter` | Simpan terjemahan dari panel detail |
-
----
-
-## Tools Pendukung
-
-Untuk ekstraksi dan injeksi `script_text.mrg` di level biner, gunakan tool terpisah di repo berikut:
-
-**[TsukiRe-mrg-txt](https://github.com/Jannabie/TsukiRe-mrg-txt)** — unpack dan repack file MRG.
-
-Untuk memasang patch ke game (emulator maupun Switch asli), gunakan sistem **LayeredFS** dengan meletakkan `script_text.mrg` hasil patch di path berikut sesuai emulatornya:
-
-Yuzu: `%AppData%\Roaming\yuzu\load\010064101344A000\[Nama Mod]\romfs\script\`
-
-Ryujinx: `%AppData%\Roaming\Ryujinx\mods\contents\010064101344a000\[Nama Mod]\romfs\script\`
-
----
-
-## Requirements
-
-Python 3.8 atau lebih baru, dengan `tkinter` yang sudah terinstall otomatis bersama Python di Windows. Tidak ada dependensi eksternal lain.
-
----
-
-## Disclaimer
-
-Tool ini dibuat untuk keperluan edukasi dan lokalisasi personal. Gunakan sesuai aturan copyright dan Terms of Service dari game original.
