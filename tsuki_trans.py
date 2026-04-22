@@ -145,6 +145,98 @@ def _load_scene_map():
     return o2s, {r:tree[r] for r in RORDER if r in tree}, sc_off
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  TEXT NORMALISATION HELPERS
+# ═══════════════════════════════════════════════════════════════════════════
+def _decode_pua(text):
+    """Convert PUA chars (U+E000–U+E07F) back to their ASCII equivalents.
+
+    The game engine encodes certain words in the Private Use Area to render
+    them in a highlight colour at runtime:  U+E061 → 'a', U+E062 → 'b', …
+    (each code point is the ASCII value + 0xE000).  Without decoding these,
+    the characters appear as empty boxes in the GUI and are invisible to the
+    search engine."""
+    return ''.join(
+        chr(ord(c) - 0xE000) if 0xE000 <= ord(c) <= 0xE07F else c
+        for c in text
+    )
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  INLINE TAG REGISTRY
+#  All tag types found in script_text.mrg + Tsukihimates translation format
+# ═══════════════════════════════════════════════════════════════════════════
+#
+#  GAME-ENGINE TAGS (in ORIGINAL JP text)
+#  @g        gray/inner-monologue style          127 occurrences, 131 strings
+#  @b        bold style (always combined w/@g)     4 occurrences
+#  @t        tab/column alignment (dual choices)   3 occurrences
+#  @k        pause/wait marker                     1 occurrence
+#  [ber00]   beep/screech sound-FX placeholder    52 occurrences
+#  [zap00]   zap sound-FX placeholder              8 occurrences
+#  ^         column-separator / emphasis marker    4 strings
+#  ■ U+25A0  censored / intentionally-blank text  83 strings
+#
+#  TRANSLATION FORMAT TAGS (written by the translator)
+#  %{i}…%{/i}  italic
+#  %{b}…%{/b}  bold
+#  %{u}…%{/u}  underline   (Tsukihimates spec)
+#  %{s}…%{/s}  strikethrough (Tsukihimates spec)
+#  #           line-glue marker (deepLuna: two consecutive MRG entries)
+#  <text|ruby> furigana / ruby (allowed in EN per Tsukihimates guidelines)
+
+_AT_TAG_RE   = re.compile(r'@[gbkt]')
+_GAME_CMD_RE = re.compile(r'\[[a-z]{3}\d{2}\]')
+_CARET_RE    = re.compile(r'\^')
+_FMT_TAG_RE  = re.compile(r'%\{/?[a-z]\}')
+_HASH_RE     = re.compile(r'#')
+
+_FMT_PAIRS = {
+    '%{i}': '%{/i}',
+    '%{b}': '%{/b}',
+    '%{u}': '%{/u}',
+    '%{s}': '%{/s}',
+}
+
+
+def _strip_all_tags(text):
+    """Strip every category of inline tag, leaving only readable content.
+    Used for grid display and search normalisation.
+    ■ (U+25A0) is intentional content and is preserved."""
+    text = re.sub(r'<([^|>]+)\|[^>]*>', r'\1', text)  # <kanji|reading> → kanji
+    text = _AT_TAG_RE.sub('', text)
+    text = _GAME_CMD_RE.sub('', text)
+    text = _CARET_RE.sub('', text)
+    text = _FMT_TAG_RE.sub('', text)
+    text = _HASH_RE.sub('', text)
+    return text
+
+
+def _validate_format_tags(text):
+    """Return human-readable warnings for every mismatched %{x}…%{/x} pair."""
+    warnings = []
+    for open_tag, close_tag in _FMT_PAIRS.items():
+        n_open  = len(re.findall(re.escape(open_tag),  text))
+        n_close = len(re.findall(re.escape(close_tag), text))
+        if n_open != n_close:
+            name = open_tag[2:-1].upper()
+            warnings.append(
+                f'%{{{name}}}: {n_open} opening, {n_close} closing')
+    return warnings
+
+def _normalize_for_search(text):
+    """Normalised, lowercased copy of *text* for substring search.
+    Pipeline: decode PUA → strip ALL inline tags → collapse whitespace.
+    Both the indexed strings AND the user query go through this function."""
+    text = _decode_pua(text)
+    text = _strip_all_tags(text)
+    text = text.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+    text = text.replace('\u3000', ' ')
+    text = re.sub(r' {2,}', ' ', text)
+    return text.lower()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  COLOUR SCHEME  —  clean black & white, minimal
 #  All colours are set after font detection in TsukiTrans.__init__
 # ═══════════════════════════════════════════════════════════════════════════
@@ -456,6 +548,23 @@ class TsukiTrans:
                   activeforeground=C["fg"], relief="flat", bd=0, cursor="hand2",
                   padx=6, pady=1, command=self._clear_detail
                   ).pack(side="right", padx=4)
+        # ── Format tag toolbar ──────────────────────────────────────────────
+        ttbar = tk.Frame(rf, bg=C["bg2"])
+        ttbar.pack(fill="x", pady=(2, 0))
+        _tbtn_cfg = dict(
+            font=(C["ui"][0], 8), bg=C["bg3"], fg=C["fg2"],
+            activebackground=C["sel"], activeforeground=C["fg"],
+            relief="flat", bd=0, cursor="hand2", padx=7, pady=1
+        )
+        tk.Button(ttbar, text="𝘐  Italic",  command=lambda: self._insert_fmt_tag("%{i}", "%{/i}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="𝐁  Bold",    command=lambda: self._insert_fmt_tag("%{b}", "%{/b}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="U  Under",   command=lambda: self._insert_fmt_tag("%{u}", "%{/u}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="#  Glue",    command=lambda: self._insert_fmt_tag("#",    ""),       **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="<ruby|>",    command=self._insert_ruby_tag,                          **_tbtn_cfg).pack(side="left", padx=(0,2))
+        self._tag_warn_lbl = tk.Label(ttbar, text="", font=(C["ui"][0], 8),
+                                      bg=C["bg2"], fg="#cc7744", anchor="e")
+        self._tag_warn_lbl.pack(side="right", padx=4)
+
         self.trans_box = tk.Text(rf, font=C["mono"], bg=C["bg3"], fg=C["fg"],
                                   insertbackground=C["fg"], relief="flat", bd=0,
                                   wrap="word", height=3, undo=True,
@@ -464,6 +573,7 @@ class TsukiTrans:
         self.trans_box.pack(fill="x")
         self.trans_box.bind("<Control-Return>", lambda e: self._save_detail())
         self.trans_box.bind("<Escape>",         lambda e: self._cancel_detail())
+        self.trans_box.bind("<<Modified>>",     self._on_trans_modified)
 
     # ─────────────────────────── TTK STYLES ─────────────────────────────
     def _apply_styles(self):
@@ -515,6 +625,36 @@ class TsukiTrans:
         s.map("TCombobox",
               fieldbackground=[("readonly", C["bg3"])],
               foreground=[("readonly", C["fg"])])
+
+        # ── orig_box: game-engine inline tag colours ──
+        fam = C["mono"][0]; sz = C["mono"][1]
+        #  @g / @b marker characters — dim them so they don't distract
+        self.orig_box.tag_configure("ot_marker",  foreground=C["fg3"])
+        #  Content rendered in @g style (gray inner-monologue)
+        self.orig_box.tag_configure("ot_gray",    foreground="#8090a0")
+        #  Content rendered in @g @b style (bold gray)
+        self.orig_box.tag_configure("ot_bold",    foreground="#8090a0", font=(fam, sz, "bold"))
+        #  [ber00] / [zap00] sound-FX placeholders
+        self.orig_box.tag_configure("ot_game",    foreground="#5588bb", background="#151e2a",
+                                    font=(fam, sz, "bold"))
+        #  ■ censored/blank text — muted with a visible tint
+        self.orig_box.tag_configure("ot_black",   foreground="#666666", background="#1e1e1e")
+
+        # ── trans_box: translation format tag colours ──
+        #  %{i} %{/i} … — the marker tokens themselves are dimmed
+        self.trans_box.tag_configure("ft_marker", foreground=C["fg3"])
+        #  Italic region between %{i}…%{/i}
+        self.trans_box.tag_configure("ft_italic", font=(fam, sz, "italic"), foreground=C["fg"])
+        #  Bold region between %{b}…%{/b}
+        self.trans_box.tag_configure("ft_bold",   font=(fam, sz, "bold"),   foreground=C["fg"])
+        #  Bold+italic overlap
+        self.trans_box.tag_configure("ft_ib",     font=(fam, sz, "bold italic"), foreground=C["fg"])
+        #  # glue markers — tinted blue so translator notices them
+        self.trans_box.tag_configure("ft_hash",   foreground="#5599cc", font=(fam, sz, "bold"))
+        #  <text|ruby> in translation — amber tint
+        self.trans_box.tag_configure("ft_ruby",   foreground="#aa9944")
+        #  Unbalanced-tag warning highlight
+        self.trans_box.tag_configure("ft_warn",   background="#2a1a00")
 
     # ─────────────────────────── TREE POPULATION ────────────────────────
     def _populate_tree(self):
@@ -602,6 +742,10 @@ class TsukiTrans:
         offsets = self._get_scope_offsets()
 
         sq   = self.search_var.get().strip().lower()
+        # Normalise the query the same way we normalise source strings so that
+        # ideographic spaces / whitespace differences are transparent.
+        sq = sq.replace('\u3000', ' ')
+        sq = re.sub(r' {2,}', ' ', sq)
         filt = self.filter_var.get()
         rows = []
 
@@ -612,7 +756,15 @@ class TsukiTrans:
 
             if filt == "Untranslated" and is_done:     continue
             if filt == "Translated"   and not is_done: continue
-            if sq and sq not in orig.lower() and sq not in trans.lower(): continue
+            if sq:
+                # Search normalised text so that:
+                #   • PUA highlight chars (U+E0xx) are visible as plain ASCII
+                #   • <kanji|reading> markup is transparent
+                #   • internal \n / \r\n / \u3000 act as ordinary spaces
+                orig_n  = _normalize_for_search(orig)
+                trans_n = _normalize_for_search(trans)
+                if sq not in orig_n and sq not in trans_n:
+                    continue
             rows.append((o, orig, trans, is_done))
 
         self._visible_rows = [r[0] for r in rows]
@@ -621,10 +773,12 @@ class TsukiTrans:
             st_icon  = "+" if is_done else " "
             done_tag = "done" if is_done else "todo"
             row_tag  = "row_even" if idx % 2 == 0 else "row_odd"
-            # Replace CR/LF with a safe ASCII separator — avoids encoding issues
-            orig_d = orig.replace("\r\n", " / ").replace("\n", " / ").replace("\r", "").strip()[:120]
-            tran_d = (trans.replace("\r\n", " / ").replace("\n", " / ").replace("\r", "").strip()[:120]
-                      if trans else "")
+            # Decode PUA + strip all inline tags for clean grid display.
+            orig_disp = _strip_all_tags(_decode_pua(orig))
+            orig_d = orig_disp.replace("\r\n", " / ").replace("\n", " / ").replace("\r", "").strip()[:120]
+            tran_disp = _strip_all_tags(trans) if trans else ""
+            tran_d = (tran_disp.replace("\r\n", " / ").replace("\n", " / ").replace("\r", "").strip()[:120]
+                      if tran_disp else "")
             self.grid.insert("", "end", iid=f"O:{o}",
                              values=(st_icon, o, orig_d, "|", tran_d),
                              tags=(done_tag, row_tag))
@@ -748,12 +902,15 @@ class TsukiTrans:
 
         self.orig_box.config(state="normal")
         self.orig_box.delete("1.0","end")
-        self.orig_box.insert("1.0", orig)
+        self.orig_box.insert("1.0", _decode_pua(orig))
+        self._highlight_orig()         # apply game-engine tag colours
         self.orig_box.config(state="disabled")
 
         self.trans_box.delete("1.0","end")
         if trans: self.trans_box.insert("1.0", trans)
         self.trans_box.edit_reset()
+        self.trans_box.edit_modified(False)
+        self._highlight_trans()        # apply format tag colours
         self._editing_detail_offset = offset
 
     def _save_detail(self):
@@ -772,10 +929,176 @@ class TsukiTrans:
         o = getattr(self, "_editing_detail_offset", None)
         if o is not None: self._load_detail(o)
 
+    # ─────────────────────────── FORMAT TAG HIGHLIGHTING ────────────────
+
+    def _on_trans_modified(self, event=None):
+        """Called by tk whenever trans_box text changes."""
+        if self.trans_box.edit_modified():
+            self._highlight_trans()
+            self._live_validate_trans()
+            self.trans_box.edit_modified(False)
+
+    def _highlight_trans(self):
+        """Render %{i}/%{b}/#/<ruby> tags visually inside trans_box."""
+        tb = self.trans_box
+        for tag in ("ft_marker","ft_italic","ft_bold","ft_ib","ft_hash","ft_ruby","ft_warn"):
+            tb.tag_remove(tag, "1.0", "end")
+
+        text = tb.get("1.0", "end-1c")
+        if not text: return
+
+        def pos(char_idx): return f"1.0+{char_idx}c"
+
+        # Dim every %{x} / %{/x} marker token
+        for m in _FMT_TAG_RE.finditer(text):
+            tb.tag_add("ft_marker", pos(m.start()), pos(m.end()))
+
+        # Highlight # glue marker
+        for m in _HASH_RE.finditer(text):
+            tb.tag_add("ft_hash", pos(m.start()), pos(m.end()))
+
+        # <text|ruby> annotation in EN translation
+        for m in re.finditer(r'<[^|>]+\|[^>]*>', text):
+            tb.tag_add("ft_ruby", pos(m.start()), pos(m.end()))
+
+        # Collect italic / bold ranges for overlap detection
+        italic_set = set()
+        bold_set   = set()
+
+        for m in re.finditer(r'%\{i\}([\s\S]*?)%\{/i\}', text):
+            cs, ce = m.start(1), m.end(1)
+            italic_set.update(range(cs, ce))
+            tb.tag_add("ft_italic", pos(cs), pos(ce))
+
+        for m in re.finditer(r'%\{b\}([\s\S]*?)%\{/b\}', text):
+            cs, ce = m.start(1), m.end(1)
+            bold_set.update(range(cs, ce))
+            tb.tag_add("ft_bold", pos(cs), pos(ce))
+
+        # Upgrade overlapping bold+italic ranges to ft_ib
+        overlap = sorted(italic_set & bold_set)
+        if overlap:
+            run_s = overlap[0]
+            for k, p in enumerate(overlap[1:], 1):
+                if p != overlap[k-1] + 1:
+                    tb.tag_add("ft_ib", pos(run_s), pos(overlap[k-1]+1))
+                    run_s = p
+            tb.tag_add("ft_ib", pos(run_s), pos(overlap[-1]+1))
+
+        # Warn on unmatched tags (paint background but don't remove highlights)
+        warnings = _validate_format_tags(text)
+        if warnings:
+            for open_tag in _FMT_PAIRS:
+                tag_name = open_tag[2:-1]     # 'i', 'b', …
+                for m in re.finditer(re.escape(open_tag)
+                                     + r'|' + re.escape(_FMT_PAIRS[open_tag]), text):
+                    tb.tag_add("ft_warn", pos(m.start()), pos(m.end()))
+
+    def _highlight_orig(self):
+        """Apply game-engine tag colours inside orig_box (read-only).
+        orig_box must already have its text inserted when this is called."""
+        ob = self.orig_box
+        for tag in ("ot_marker","ot_gray","ot_bold","ot_game","ot_black"):
+            ob.tag_remove(tag, "1.0", "end")
+
+        text = ob.get("1.0", "end-1c")
+        if not text: return
+
+        def pos(char_idx): return f"1.0+{char_idx}c"
+
+        # [ber00] / [zap00] sound-FX placeholders
+        for m in _GAME_CMD_RE.finditer(text):
+            ob.tag_add("ot_game", pos(m.start()), pos(m.end()))
+
+        # ■ censored text
+        for m in re.finditer("■", text):
+            ob.tag_add("ot_black", pos(m.start()), pos(m.end()))
+
+        # @g, @b, @t, @k markers — dim the marker token itself
+        for m in _AT_TAG_RE.finditer(text):
+            ob.tag_add("ot_marker", pos(m.start()), pos(m.end()))
+
+        # Content after @g is rendered gray in-game
+        for m in re.finditer(r'@g', text):
+            ob.tag_add("ot_gray", pos(m.end()), "end-1c")
+
+        # Content after @b inside an @g block is bold-gray
+        for m in re.finditer(r'@b', text):
+            ob.tag_add("ot_bold", pos(m.end()), "end-1c")
+
+    def _live_validate_trans(self):
+        """Update the inline warning label while the translator types."""
+        text = self.trans_box.get("1.0", "end-1c")
+        warnings = _validate_format_tags(text)
+        if warnings:
+            self._tag_warn_lbl.config(text="⚠ " + "  ".join(warnings))
+        else:
+            self._tag_warn_lbl.config(text="")
+
+    # ─────────────────────────── FORMAT TAG INSERTION ───────────────────
+
+    def _insert_fmt_tag(self, open_tag, close_tag):
+        """Wrap selected text (or a placeholder) with open_tag/close_tag."""
+        tb = self.trans_box
+        try:
+            sel_s    = tb.index("sel.first")
+            sel_e    = tb.index("sel.last")
+            selected = tb.get(sel_s, sel_e)
+            tb.delete(sel_s, sel_e)
+            tb.insert(sel_s, open_tag + selected + close_tag)
+            # Move cursor to end of inserted block
+            tb.mark_set("insert", f"{sel_s}+{len(open_tag)+len(selected)+len(close_tag)}c")
+        except tk.TclError:
+            # No selection — insert at cursor with "text" placeholder
+            cursor = tb.index("insert")
+            if close_tag:
+                placeholder = "text"
+                tb.insert(cursor, open_tag + placeholder + close_tag)
+                p_start = f"{cursor}+{len(open_tag)}c"
+                p_end   = f"{cursor}+{len(open_tag)+len(placeholder)}c"
+                tb.tag_add("sel", p_start, p_end)
+                tb.mark_set("insert", p_end)
+            else:
+                tb.insert(cursor, open_tag)
+        self._highlight_trans()
+        self._live_validate_trans()
+        tb.focus_set()
+
+    def _insert_ruby_tag(self):
+        """Insert a <text|reading> ruby annotation around the selection."""
+        tb = self.trans_box
+        try:
+            sel_s    = tb.index("sel.first")
+            sel_e    = tb.index("sel.last")
+            selected = tb.get(sel_s, sel_e)
+            tb.delete(sel_s, sel_e)
+            inserted = f"<{selected}|reading>"
+            tb.insert(sel_s, inserted)
+            # Select the "reading" placeholder
+            base = f"{sel_s}+{len(selected)+2}c"
+            tb.tag_add("sel", base, f"{sel_s}+{len(inserted)-1}c")
+            tb.mark_set("insert", f"{sel_s}+{len(inserted)-1}c")
+        except tk.TclError:
+            cursor = tb.index("insert")
+            tb.insert(cursor, "<text|reading>")
+            tb.tag_add("sel", f"{cursor}+6c", f"{cursor}+13c")
+            tb.mark_set("insert", f"{cursor}+13c")
+        self._highlight_trans()
+        tb.focus_set()
+
     # ─────────────────────────── SAVE TRANSLATION ───────────────────────
     def _set_translation(self, offset, value):
         old = self.translations.get(offset, "")
         if old == value: return
+        # ── Validate format tags before committing ──
+        if value:
+            warnings = _validate_format_tags(value)
+            if warnings:
+                msg = ("Mismatched format tags in translation:\n"
+                       + "\n".join(f"  • {w}" for w in warnings)
+                       + "\n\nSave anyway?")
+                if not messagebox.askyesno("Tag Warning", msg, parent=self.root):
+                    return
         if value:
             self.translations[offset] = value
         else:
@@ -788,7 +1111,7 @@ class TsukiTrans:
             is_done  = bool(value and value.strip())
             st_icon  = "+" if is_done else " "
             done_tag = "done" if is_done else "todo"
-            tran_d   = (value.replace("\r\n"," / ").replace("\n"," / ").strip()[:120]
+            tran_d   = (_strip_all_tags(value).replace("\r\n"," / ").replace("\n"," / ").strip()[:120]
                         if value else "")
             old_vals = list(self.grid.item(iid, "values"))
             # preserve alternating row tag
