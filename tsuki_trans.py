@@ -236,6 +236,71 @@ def _normalize_for_search(text):
     return text.lower()
 
 
+# Symbol characters that appear in inline tags — if the query contains any of
+# these we also search the RAW (tag-preserved) text so that @g, %{i}, [ber00]
+# etc. are all findable.
+_SYMBOL_CHARS = set('@%#^[]<>|')
+
+def _raw_for_search(text):
+    """Lightweight normalisation used for symbol/tag search.
+    Only PUA-decodes and collapses whitespace — keeps every tag character."""
+    text = _decode_pua(text)
+    text = text.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+    text = text.replace('\u3000', ' ')
+    text = re.sub(r' {2,}', ' ', text)
+    return text.lower()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  GRID DISPLAY HELPERS
+#  These are SEPARATE from search normalisation on purpose:
+#  • _grid_fmt   → shows the text as-is (only PUA decoded + newline flattened)
+#                  so every tag is visible in the grid without clicking.
+#  • _tags_badge → compact flag string shown in a dedicated grid column so
+#                  the user can scan for @g / furigana / sound-FX / ■ / %{i}
+#                  at a glance.
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _grid_fmt(text, maxlen=130):
+    """Prepare text for the grid cell.
+    • Decode PUA highlight chars → readable ASCII
+    • Flatten internal CR/LF to  ·  (middle dot) so multi-line strings stay
+      on one visual row, but the break point is still visible
+    • Truncate to *maxlen* chars
+    Does NOT strip any tags — @g, <kanji|furi>, [ber00], %{i}, # etc. are all
+    left in place so the user can see them while scanning the list."""
+    text = _decode_pua(text)
+    text = text.replace('\r\n', ' · ').replace('\n', ' · ').replace('\r', '')
+    return text.strip()[:maxlen]
+
+
+def _tags_badge(orig, trans=''):
+    """Return a short compact badge string summarising what special tags exist
+    in *orig* (game-engine) and *trans* (translation format).
+
+    Badge characters:
+      g   string has @g inner-monologue style
+      b   string has @g @b bold-gray style
+      fx  string has [ber00] or [zap00] sound-FX placeholder
+      ■   string has ■ (censored / intentionally blank)
+      «»  string has <kanji|furigana> ruby markup
+      %i  translation contains %{i} italic tag
+      %b  translation contains %{b} bold tag
+      #   translation contains # glue marker
+    """
+    parts = []
+    if '@b' in orig:                           parts.append('gb')
+    elif '@g' in orig:                         parts.append('g')
+    if _GAME_CMD_RE.search(orig):              parts.append('fx')
+    if '■' in orig:                            parts.append('■')
+    if re.search(r'<[^|>]+\|[^>]*>', orig):   parts.append('«»')
+    if trans:
+        if '%{i}' in trans or '%{/i}' in trans: parts.append('%i')
+        if '%{b}' in trans or '%{/b}' in trans: parts.append('%b')
+        if '#' in trans:                         parts.append('#')
+    return ' '.join(parts)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  COLOUR SCHEME  —  clean black & white, minimal
 #  All colours are set after font detection in TsukiTrans.__init__
@@ -477,21 +542,31 @@ class TsukiTrans:
         # ── translation grid ──
         gf = tk.Frame(parent, bg=C["bg"]); gf.pack(fill="both", expand=True)
 
-        # "div" is a narrow 1-px visual separator column between Original and Translation
-        cols = ("status", "offset", "original", "div", "translation")
+        # columns: status | offset | div0 | tags-badge | div2 | original | div | translation
+        # "div0"  = 1-px visual separator between # and Tags
+        # "tags"  = compact indicator column so every tag type is visible without clicking
+        # "div2"  = 1-px visual separator between Tags and Original
+        # "div"   = 1-px visual separator between Original and Translation
+        cols = ("status", "offset", "div0", "tags", "div2", "original", "div", "translation")
         self.grid = ttk.Treeview(gf, columns=cols, show="headings",
                                   style="G.Treeview", selectmode="browse")
-        self.grid.heading("status",      text=" ",          anchor="center")
-        self.grid.heading("offset",      text="#",          anchor="center")
-        self.grid.heading("original",    text="Original",   anchor="w")
-        self.grid.heading("div",         text="",           anchor="center")
+        self.grid.heading("status",      text=" ",     anchor="center")
+        self.grid.heading("offset",      text="#",     anchor="center")
+        self.grid.heading("div0",        text="",            anchor="center")
+        self.grid.heading("tags",        text="Tags",  anchor="w")
+        self.grid.heading("div2",        text="",            anchor="center")
+        self.grid.heading("original",    text="Original",    anchor="w")
+        self.grid.heading("div",         text="",            anchor="center")
         self.grid.heading("translation", text="Translation", anchor="w")
 
         self.grid.column("status",      width=24,  minwidth=24,  stretch=False, anchor="center")
         self.grid.column("offset",      width=64,  minwidth=52,  stretch=False, anchor="center")
-        self.grid.column("original",    width=490, minwidth=180, stretch=True)
-        self.grid.column("div",         width=14,  minwidth=14,  stretch=False, anchor="center")
-        self.grid.column("translation", width=490, minwidth=180, stretch=True)
+        self.grid.column("div0",        width=12,  minwidth=12,  stretch=False, anchor="center")
+        self.grid.column("tags",        width=58,  minwidth=50,  stretch=False, anchor="w")
+        self.grid.column("div2",        width=12,  minwidth=12,  stretch=False, anchor="center")
+        self.grid.column("original",    width=460, minwidth=160, stretch=True)
+        self.grid.column("div",         width=12,  minwidth=12,  stretch=False, anchor="center")
+        self.grid.column("translation", width=460, minwidth=160, stretch=True)
 
         vsb2 = ttk.Scrollbar(gf, orient="vertical",   command=self.grid.yview)
         hsb2 = ttk.Scrollbar(gf, orient="horizontal", command=self.grid.xview)
@@ -556,11 +631,14 @@ class TsukiTrans:
             activebackground=C["sel"], activeforeground=C["fg"],
             relief="flat", bd=0, cursor="hand2", padx=7, pady=1
         )
-        tk.Button(ttbar, text="𝘐  Italic",  command=lambda: self._insert_fmt_tag("%{i}", "%{/i}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
-        tk.Button(ttbar, text="𝐁  Bold",    command=lambda: self._insert_fmt_tag("%{b}", "%{/b}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
-        tk.Button(ttbar, text="U  Under",   command=lambda: self._insert_fmt_tag("%{u}", "%{/u}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
-        tk.Button(ttbar, text="#  Glue",    command=lambda: self._insert_fmt_tag("#",    ""),       **_tbtn_cfg).pack(side="left", padx=(0,2))
-        tk.Button(ttbar, text="<ruby|>",    command=self._insert_ruby_tag,                          **_tbtn_cfg).pack(side="left", padx=(0,2))
+        # Toolbar labels use plain ASCII so they render on any CJK font.
+        # Format shown: [tag]  Label  so the actual tag syntax is obvious.
+        tk.Button(ttbar, text="%{i}  Italic",   command=lambda: self._insert_fmt_tag("%{i}", "%{/i}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="%{b}  Bold",     command=lambda: self._insert_fmt_tag("%{b}", "%{/b}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="%{u}  Under",    command=lambda: self._insert_fmt_tag("%{u}", "%{/u}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="%{s}  Strike",   command=lambda: self._insert_fmt_tag("%{s}", "%{/s}"), **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="#  Glue",        command=lambda: self._insert_fmt_tag("#",    ""),       **_tbtn_cfg).pack(side="left", padx=(0,2))
+        tk.Button(ttbar, text="<ruby|>",        command=self._insert_ruby_tag,                          **_tbtn_cfg).pack(side="left", padx=(0,2))
         self._tag_warn_lbl = tk.Label(ttbar, text="", font=(C["ui"][0], 8),
                                       bg=C["bg2"], fg="#cc7744", anchor="e")
         self._tag_warn_lbl.pack(side="right", padx=4)
@@ -625,6 +703,9 @@ class TsukiTrans:
         s.map("TCombobox",
               fieldbackground=[("readonly", C["bg3"])],
               foreground=[("readonly", C["fg"])])
+
+        # ── tags badge column colour ──
+        self.grid.tag_configure("has_tags", foreground="#6699bb")
 
         # ── orig_box: game-engine inline tag colours ──
         fam = C["mono"][0]; sz = C["mono"][1]
@@ -742,10 +823,13 @@ class TsukiTrans:
         offsets = self._get_scope_offsets()
 
         sq   = self.search_var.get().strip().lower()
-        # Normalise the query the same way we normalise source strings so that
-        # ideographic spaces / whitespace differences are transparent.
+        # Normalise query: collapse ideographic spaces and extra whitespace.
         sq = sq.replace('\u3000', ' ')
         sq = re.sub(r' {2,}', ' ', sq)
+        # Detect whether the query contains tag/symbol characters.
+        # If so, we use raw (tag-preserved) text in addition to normalised text
+        # so that @g, %{i}, [ber00], #, ^ etc. are all searchable.
+        sq_has_symbols = bool(sq and _SYMBOL_CHARS.intersection(sq))
         filt = self.filter_var.get()
         rows = []
 
@@ -757,13 +841,18 @@ class TsukiTrans:
             if filt == "Untranslated" and is_done:     continue
             if filt == "Translated"   and not is_done: continue
             if sq:
-                # Search normalised text so that:
-                #   • PUA highlight chars (U+E0xx) are visible as plain ASCII
-                #   • <kanji|reading> markup is transparent
-                #   • internal \n / \r\n / \u3000 act as ordinary spaces
+                # Primary path: normalised search (strips tags, collapses whitespace).
+                # This keeps plain-text search fast and tag-agnostic.
                 orig_n  = _normalize_for_search(orig)
                 trans_n = _normalize_for_search(trans)
-                if sq not in orig_n and sq not in trans_n:
+                match = sq in orig_n or sq in trans_n
+                # Secondary path: if query contains symbol chars, also check raw
+                # text so that patterns like @g, %{i}, [ber00], # are findable.
+                if not match and sq_has_symbols:
+                    orig_r  = _raw_for_search(orig)
+                    trans_r = _raw_for_search(trans)
+                    match = sq in orig_r or sq in trans_r
+                if not match:
                     continue
             rows.append((o, orig, trans, is_done))
 
@@ -773,14 +862,14 @@ class TsukiTrans:
             st_icon  = "+" if is_done else " "
             done_tag = "done" if is_done else "todo"
             row_tag  = "row_even" if idx % 2 == 0 else "row_odd"
-            # Decode PUA + strip all inline tags for clean grid display.
-            orig_disp = _strip_all_tags(_decode_pua(orig))
-            orig_d = orig_disp.replace("\r\n", " / ").replace("\n", " / ").replace("\r", "").strip()[:120]
-            tran_disp = _strip_all_tags(trans) if trans else ""
-            tran_d = (tran_disp.replace("\r\n", " / ").replace("\n", " / ").replace("\r", "").strip()[:120]
-                      if tran_disp else "")
+            # Display the text AS-IS (only PUA decoded + newlines flattened).
+            # Tags (@g, <kanji|furi>, [ber00], %{i}, #) stay visible in the grid
+            # so the user can scan them without clicking into the detail panel.
+            orig_d  = _grid_fmt(orig)
+            tran_d  = _grid_fmt(trans) if trans else ""
+            badge   = _tags_badge(orig, trans)
             self.grid.insert("", "end", iid=f"O:{o}",
-                             values=(st_icon, o, orig_d, "|", tran_d),
+                             values=(st_icon, o, "|", badge, "|", orig_d, "|", tran_d),
                              tags=(done_tag, row_tag))
 
         # Divider column: style it with dim color so "|" acts as visual separator
@@ -832,10 +921,10 @@ class TsukiTrans:
 
     def _on_grid_double(self, event):
         col = self.grid.identify_column(event.x)
-        # col "#5" = translation (was "#4" before adding the "div" column)
-        if col == "#5":
+        # col "#8" = translation (status=#1 offset=#2 div0=#3 tags=#4 div2=#5 original=#6 div=#7 translation=#8)
+        if col == "#8":
             self._open_inline_editor()
-        # clicking original or div column just loads detail (via sel event)
+        # clicking any other column just loads detail (via sel event)
 
     def _on_grid_enter(self, _):
         self._open_inline_editor()
@@ -862,7 +951,7 @@ class TsukiTrans:
         sel = self.grid.focus()
         if not sel or not sel.startswith("O:"): return
         o = int(sel[2:])
-        bbox = self.grid.bbox(sel, "#5")   # "#5" = translation column (after div)
+        bbox = self.grid.bbox(sel, "#8")   # "#8" = translation col (status=#1 offset=#2 div0=#3 tags=#4 div2=#5 orig=#6 div=#7 trans=#8)
         if not bbox: return
         self._close_inline_editor(save=False)
         x, y, w, h = bbox
@@ -1111,14 +1200,14 @@ class TsukiTrans:
             is_done  = bool(value and value.strip())
             st_icon  = "+" if is_done else " "
             done_tag = "done" if is_done else "todo"
-            tran_d   = (_strip_all_tags(value).replace("\r\n"," / ").replace("\n"," / ").strip()[:120]
-                        if value else "")
+            tran_d   = _grid_fmt(value) if value else ""
             old_vals = list(self.grid.item(iid, "values"))
-            # preserve alternating row tag
             old_tags = self.grid.item(iid, "tags")
             row_tag  = next((t for t in old_tags if t.startswith("row_")), "row_even")
+            orig_raw = self.originals.get(offset, "")
             old_vals[0] = st_icon
-            old_vals[4] = tran_d     # index 4 = translation (index 3 is now the "div" column)
+            old_vals[3] = _tags_badge(orig_raw, value)  # index 3 = tags badge col
+            old_vals[7] = tran_d                         # index 7 = translation col
             self.grid.item(iid, values=old_vals, tags=(done_tag, row_tag))
         self._set_status(f"Saved offset #{offset}  ({len(value)} chars)", C["fg"])
         self._update_progress()
