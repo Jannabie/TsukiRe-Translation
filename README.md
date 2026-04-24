@@ -1,98 +1,155 @@
 # deepLuna
-Extractor/Editor/Translator/Injector for Tsukihime Remake
 
-## About
-deepLuna, from "deepL", the machine translation service, and "Luna", the name of the Roman Moon goddess, is a Python script with a GUI interface that works as an extractor/editor/translator (with deepL API)/injector for the text of the Tsukihime Remake game on Switch and possibly on PS4, while taking into account the whole internal structure of the script.
+A translation tool for **Tsukihime Remake** (`allscr.mrg` / `script_text.mrg`) with a modern GUI and CLI suite. Based on the original [Tsukihimates](https://github.com/Tsukihimates/Tsukihime-Translation) toolchain, improved with a cleaner interface, inline editing, tag validation, and a linter.
 
-## Installation
-You just need a regular Python distribution, for example the last one from https://www.python.org/downloads/, and then launch the script deepLuna.py using a Python IDE, for example IDLE that you get by default, or some other (Spyder, Pyzo, etc.).
+> ⚠️ **This tool targets the Japanese version of Tsukihime Remake only.** It will not work with other releases or languages.
 
-For installing dependencies, it's recommended to use a python virtualenv.
-To create a new virtualenv and install the dependencies necessary for deepLuna:
+---
+
+## Requirements
+
+- Python 3.10+
+- `tkinter` (bundled with standard Python)
+- `Pillow` (optional, legacy only)
 
 ```bash
-# Create a new virtual environment valled 'venv'
-python3 -m virtualenv venv
-# Activate the virtual enviroment, so that pip installs packages locally
-. venv/bin/activate
-# Install the necessary requirements
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-## Usage
+---
 
-### Preprocessing steps
-1) Dump/Find the NSP Tsukihime Switch ROM as well as the relevant keys (prod.keys and title.keys)
-2) Extract the NSP and the resulting (biggest) NCA file using for example hactool (https://github.com/SciresM/hactool)
-3) In the romfs folder, copy the **script_text.mrg** and **allscr.mrg** files and paste them in the same folder as deepLuna.py.
+## Quick Start
 
-### Extracting the text (first compulsory step)
-After launching deepLuna, click on "Extract text" and wait until the extraction finishes.
+```bash
+python deepLuna.py                    # open GUI
+python deepLuna.py deepluna_db.json   # auto-load an existing DB
+```
 
-**IMPORTANT NOTE:** This might take a bit of time, around a minute, and this is normal if you have the feeling that the graphical interface is lagging. The script is actually working at the command line level, so you can follow what is going on in the python console or in the console of the IDE you're using.
+---
 
-The main editor window should open. If the script complains (an error window will open), make sure that you placed both script files in the same folder as deepLuna and check that their respective names are "script_text.mrg" and "allscr.mrg" (these are the original names of the files).
+## GUI Workflow
 
-### Editing the text
-Once the first extraction has been done, when launching deepLuna simply click on "Open translation". This might also take some seconds.
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [📂 Open DB] [⚙ Extract MRGs]  allscr.mrg: [__]  script_text.mrg: [__]  │
+│                                              [▶ PATCH MRG]  [💾 Save DB] │
+├──────────────────┬───────────────────────────────────────────────────────┤
+│ SCENES           │  [🔍 search...]  ○ All  ○ Untranslated  ○ Translated  │
+│ ► Arcueid  45%  ├───────────────────────────────────────────────────────│
+│   ► Day 1       │  #  │  JP ORIGINAL         │  EN TRANSLATION           │
+│     SCENE_001   │  1  │  彼女の声が…         │  Her voice…               │
+│   ► Day 2       │  2  │  また明日            │  (untranslated)            │
+│ ► Ciel  30%     │                                                         │
+├──────────────────┴───────────────────────────────────────────────────────┤
+│  Status message                                         Global: 38.4%    │
+└──────────────────────────────────────────────────────────────────────────┘
+```
 
-The main editor window contains three main elements:
-- On the left there is a tree view of the text files of the game, and it is the only active element at the beginning. This section is the organized by heroine and days ("Arcueid" and "Ciel"). The remaining three sections concern the bad end section "Teach Me, Ciel-sensei!", the part that is common to both Arcueid's and Ciel's route called "Common" and finally the section "Hidden text" that shows some text grabbed by the script that is not used ingame. The first thing you have to do is choose one of the scenes that appear as elements of the form "TEXT_WITH_UNDERSCORES_AND_NUMBERS", and then double-click on it. **IMPORTANT NOTE:** When clicking on one of the element, due to the structure of the script, you might have to wait a few seconds before the next content loads - this is perfectly normal.
-- The second element from the left, a scrolling list, activates. It shows the content of the selected scene in the form "a : b" where a is the page and b is the line on the page a. Double-click on any element. You might also note at this point that the two fields above activated, and will show up the percentage of translation done on the selected scene as well as for the global file, computed both in real time. We will come back to them in the section below.
-- Finally, you have the main editing part: a field that shows the original japanese selected line called "Original text", a field called "Translated text" below where you have to input your translation of the line above by replacing the word "TRANSLATION" that is there, a field called "Comments" for any comments related to translation and finally some buttons that will allow you to perform all the relevant actions.
+1. **Extract MRGs** — set paths to `allscr.mrg` and `script_text.mrg`, click ⚙ Extract MRGs. Or open an existing `deepluna_db.json` with 📂 Open DB.
+2. Click any scene in the left panel to load it.
+3. **Double-click** a translation cell to edit. `Enter` saves, `Esc` cancels, `Tab` saves and moves to the next line.
+4. **💾 Save DB** to persist your work as JSON.
+5. **▶ Patch MRG** to generate the patched `script_text.mrg` ready for the game.
 
-**IMPORTANT NOTE:** When in some line you meet the pound/hashtag character "#", PLEASE do not delete it and leave as it is in the translation! This character symbolizes the fact that the line is shown ingame with a small break where the "#" is, and from a low-level perspective, symbolizes that the line is cut into two separate strings with altogether different pointers, so erasing it WILL break everything.
+---
 
-#### Commands
-**Validate**: When you finish inputting the translation for a line, click on this button. The corresponding offset will become green to confirm the translation and the percentage of advancement of translation will update for the scene as well as for the total game.
+## CLI Tools
 
-**Save**: When you finish your translation, simply click on this button to save everything. **IMPORTANT NOTE:** This operation might also take a few seconds, this is also normal.
+```bash
+# Export / import / patch without the GUI
+python luna_cli.py --help
 
-**Search**: Opens a window to search for some text in Japanese/Translated fields (comments are not included). Enter the text in the first field, and click on "Search". Move between the results with "Previous"/"Next". If you want to replace some text (works only for the translated text for obvious reasons), simply use the last field in the window and then click on "Replace"/"Replace all" (the number of results will update automatically). This allows you to search for text only in the selected scene, not in the whole game script.
+# Lint the entire translation DB for tag issues
+python luna_linter.py
+```
 
-### Translating the text
-Select an offset or a range of offset (using Shift+double-click), then click on the "Translate" button in the main screen, a new window will open. The first time you execute the script, you'll have to configure three options (after that, they will be saved in a config.ini file created in deepLuna folder after the initial launch and load automatically everytime you launch deepLuna):
+---
 
-a) "deepL API link": Input here your API link(s) from deepL (replace the 0 that is there). If you have several of them, just separate them by a comma - the script will try them successively when a translation request fails. Currently works only for free deepL accounts (possible future update for a pro deepL API link). NOTE: If you copy/paste your API link and it doesn't work, make sure that there is not an additional space character that was copied at the end of the link, this might happen.
+## Tag Reference
 
-b) "Language": Put the initials of the language into which you want to translate the script (e.g. EN for english, FR for french, DE for german, IT for italian, RU for russian, PL for polish, ES for spansih, etc.)
+### Translation Format Tags
 
-c) "Block translation": If you keep this box unchecked, deepLuna will send each line separately to deepL for translation. If you check the box, deepLuna will glue all the lines from the selected range of offsets together, and send the whole block to deepL before splitting them again. From experience, the latter option might improve the quality of translation since you give more context to deepL, but on the other hand produces sometimes completely unrelated translated sentences in the middle if the block is really big. You have to play around to see what option is the best depending on context and chosen sentences.
+These are written in your English translation text.
 
-IMPORTANT NOTE: The furigana are thrown away during translation at the moment since their structure prevent deepL from giving a consistent translation, and also because their meaning and positioning sometimes doesn't match at all the original word (Nasu writing style is really something...). Maybe I'll try to implement something to deal with this problem in the future, but for the moment it is as it is.
+| Tag | Effect | Notes |
+|-----|--------|-------|
+| `%{i}…%{/i}` | Italic | PUA-encoded into final MRG |
+| `%{g}…%{/g}` | Gray / inner monologue | Must start at position 0 of the entry |
+| `%{ri}…%{/ri}` | Reverse italic | Write text normally; encoder reverses it |
+| `%{b}…%{/b}` | Bold | Legacy — identical to italic in-engine |
+| `%{u}…%{/u}` | Underline | Stripped (no engine support) |
+| `%{s}…%{/s}` | Strikethrough | Stripped (no engine support) |
+| `%{n}` | Forced line break | Becomes `\r\n` in MRG |
+| `#` | Line glue | Merges two consecutive MRG entries as one |
 
-Now, it suffices to click on "OK" and wait until translation finishes. If something fails (too much deepL requests for example), the program will tell you and if you've chosen the line-by-line translation approach, will point you out the line where it stopped.
+### Ruby Text (Furigana)
 
-### Injecting the text back
-Easy as pie, simply click on the button "Insert" and wait a little bit (it might take up to ~20 seconds on some older computers). deepLuna will generate a new script file of the form "script_text_translatedDATETIME.mrg", with DATETIME being the date and time of insertion (to avoid overwriting files and keeping backups).
-NOTE: The script inserts everytime the full translation.
+```
+<display|reading>
+```
 
-### **NEW** Comment field
+**Example:** `<彼女|かのじょ>` renders as 彼女 with かのじょ above it.
 
-If you want to put a general comment related to translation/edition or anything to the same extent for any line of text, it is now possible to do some in the "Comments" field below "Translated text". Upon validating, your comment will be saved, and when exporting the day, it will appear on the same line after a `//` character. Imported text with such a character at then end of the line will also be counted as a comment.
+> ⚠️ **The reading field is stripped during MRG injection.** Only the display text is kept in the final binary. Do **not** put ASCII characters in the reading field — this causes a HuneX engine layout **freeze**.
 
-### **NEW** Characters swapping
+### Game-Engine Tags (JP original, read-only)
 
-In certain languages, some special characters will take double space ingame, which makes them look out of place. In order to correct this, you can tinker font files so that to replace certain useless characters by your special characters. The idea is then to replace all your special characters by those useless characters when inserting the text, so that the modded font prints them as you special characters. To do that, simply check "Swap characters" below the buttons bar, and then insert.
-In the new windows that opens, put on each line the replace and replacement characters separated by a comma, like `a,@`, which means that all "a" will be replaced by "@". Each line should contain only one pair of those! Once this is done, click on OK and wait like for usual insertion. You'll have to do this only once, deepLuna will then keep your replacement table saved. If you want for some reason to have the standard insertion, just uncheck "Swap characters".
+These appear in the source JP text. Do not inject them manually in translations; use the format tags above instead.
 
-### Exporting functions
+| Tag | Meaning |
+|-----|---------|
+| `@g` | Gray / inner-monologue style |
+| `@b` | Bold + gray (always paired with `@g`) |
+| `@t` | Tab / column alignment |
+| `@k` | Pause / wait marker |
+| `[ber00]` | Beep / screech sound-FX placeholder |
+| `[zap00]` | Zap sound-FX placeholder |
+| `^` | Column separator / emphasis (dual-choice display) |
+| `■` (U+25A0) | Intentionally-blank / censored text |
 
-Since the v2.0, deepLuna makes your life easier if you're working as a group on the translation, which is usually the case. How to keep everything up to date for all the people? Whenever you finish working on some scene, just press on "Export", and deepLuna will generate an update file in the update folder, in the same directory.
-If you look inside, you will see that this is a simple text file with the same name as the scene you were working on, and if you open it, you'll realise that this is exactly the case - the exported file contains the whole scene in a very nice and readable way, with the original sentences where they were, and the freshly translated sentences where the japanese ones were supposed to be. It suffices now to send this file to your colleagues, and they will simply have to put it in the "update" folder. When they launch deepLuna the next time they want to use it, it will update itself and include the new file in its own database.
+---
 
-If you need for some reason to export your whole personal database, this is also doable - simply click on "Export all", and a new window will open, asking you for confirmation. Note that this operation might take up to 10 mn on some older computers.
+## Tag Validation
 
-On another note, this update function makes it possible to have an alternative use of deepLuna: simply export the scene file, then edit it directly with your favorite text editor, and finally share it with your teammates or use the "Insert" function to inject it in the script yourself.
+`tag_validator.py` is run automatically before MRG injection. It also backs the **Linter** (`Ctrl+L` in the GUI).
 
+| Severity | Examples |
+|----------|---------|
+| **CRITICAL** | Ruby reading field contains ASCII → engine freeze |
+| **ERROR** | Unclosed `%{i}`, `%{g}`, `%{ri}` pairs; nested `%{ri}` |
+| **WARNING** | Malformed ruby (missing `\|`); `%{g}` mixed with `%{ri}`; strings > 512 bytes |
+| **INFO** | Ruby tags stripped on injection; `%{b}` identical to `%{i}` |
 
-### Additional comments
+---
 
-Feel free to raise an issue if something happens or if you wish to have some specific functionality, I'm always open to new possibilities and improvements! On another note, if you end up using this tool in some way or the other for your translation, please simply credit the script name itself, deepLuna, in some place or the other on your website/patched game/other.
+## File Structure
 
-This readme will get a more substantial update in the following days with screenshots and/or video tutorials.
+```
+deepLuna.py               ← entry point
+luna_cli.py               ← headless CLI
+luna_linter.py            ← translation linter
+mrg_io.py                 ← MZP binary parser & packer
+pua_encode.py             ← PUA font encoding
+tag_validator.py          ← pre-injection tag checker
+text_utils.py             ← tag registry & search helpers
+scene_map.json            ← scene-to-offset mapping
+luna/
+  constants.py            ← paths & settings
+  mrg_parser.py           ← MZP container parser
+  mzx.py                  ← MZX decompressor
+  ruby_utils.py           ← ruby text & line-break logic
+  readable_exporter.py    ← human-readable export format
+  translation_db.py       ← core DB (content-addressed by hash)
+  ui/
+    modern_window.py      ← main GUI
+    information_window.py ← about dialog
+tests/
+  test_ruby_utils.py
+  test_translation_db.py
+```
 
-### Acknoledgments
+---
 
-I am really thankful to Hintay for his wonderful tools at https://github.com/Hintay/PS-HuneX_Tools. I relied on them heavily (unpack_allsrc.py, prep_tpl.py and the mzx decompression script) and included a modified version of them in deepLuna to make it perfectly operational.
+## Credits
 
+Based on the original toolchain by [Tsukihimates](https://github.com/Tsukihimates/Tsukihime-Translation). This fork improves the GUI, adds inline editing, tag validation, and a linter for easier use.
