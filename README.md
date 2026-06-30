@@ -33,7 +33,7 @@ After opening the application, there are two ways to start: if this is your firs
 
 Select a scene from the left panel to load it into the grid. **Double-click** a translation cell to edit it inline — `Enter` to save, `Esc` to cancel, `Tab` to save and move to the next line.
 
-Click **💾 Save DB** to save progress to JSON, and **▶ Patch MRG** once ready to generate a patched `script_text.mrg` ready to use in the game.
+Click ** Save DB** to save progress to JSON, and ** Patch MRG** once ready to generate a patched `script_text.mrg` ready to use in the game.
 
 ---
 
