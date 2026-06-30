@@ -1,16 +1,16 @@
 # deepLuna
 
-Tool terjemahan untuk **Tsukihime Remake** (`allscr.mrg` / `script_text.mrg`) dengan GUI modern dan CLI. Dibuat berdasarkan konsep dari toolchain milik [Tsukihimates](https://github.com/Tsukihimates/Tsukihime-Translation), namun dibangun ulang dengan tampilan yang lebih mudah dipahami, editing inline, validasi tag, dan linter bawaan.
+A translation tool for **Tsukihime Remake** (`allscr.mrg` / `script_text.mrg`) with a modern GUI and CLI. Built based on concepts from the toolchain by [Tsukihimates](https://github.com/Tsukihimates/Tsukihime-Translation), but rebuilt with a more intuitive interface, inline editing, tag validation, and a built-in linter.
 
-> ⚠️ **Tool ini hanya bekerja pada versi Jepang dari Tsukihime Remake.** Versi lain tidak didukung.
+>  **This tool only works on the Japanese version of Tsukihime Remake.** Other versions are not supported.
 
 ---
 
-## Persyaratan
+## Requirements
 
 - Python 3.10+
-- `tkinter` (sudah bundled di Python standar)
-- `Pillow` (opsional, hanya untuk komponen legacy)
+- `tkinter` (already bundled with standard Python)
+- `Pillow` (optional, only for legacy components)
 
 ```bash
 pip install -r requirements.txt
@@ -18,112 +18,112 @@ pip install -r requirements.txt
 
 ---
 
-## Cara Menjalankan
+## How to Run
 
 ```bash
-python deepLuna.py                    # buka GUI
-python deepLuna.py deepluna_db.json   # langsung load DB yang sudah ada
+python deepLuna.py                    # open GUI
+python deepLuna.py deepluna_db.json   # load an existing DB directly
 ```
 
 ---
 
-## Alur Kerja GUI
+## GUI Workflow
 
-Setelah membuka aplikasi, ada dua cara untuk mulai: jika baru pertama kali, isi path ke `allscr.mrg` dan `script_text.mrg` lalu klik **⚙ Extract MRGs** untuk membuat database baru. Jika sudah punya file `deepluna_db.json` sebelumnya, langsung klik **📂 Open DB**.
+After opening the application, there are two ways to start: if this is your first time, fill in the path to `allscr.mrg` and `script_text.mrg`, then click **⚙ Extract MRGs** to create a new database. If you already have a previous `deepluna_db.json` file, click **📂 Open DB** directly.
 
-Pilih scene dari panel kiri untuk memuatnya ke grid. **Double-click** cell terjemahan untuk mengedit secara inline — `Enter` untuk simpan, `Esc` untuk batal, `Tab` untuk simpan dan lanjut ke baris berikutnya.
+Select a scene from the left panel to load it into the grid. **Double-click** a translation cell to edit it inline — `Enter` to save, `Esc` to cancel, `Tab` to save and move to the next line.
 
-Klik **💾 Save DB** untuk menyimpan progress ke JSON, dan **▶ Patch MRG** saat sudah siap untuk menghasilkan `script_text.mrg` yang sudah ditambal dan siap dipakai di game.
+Click **💾 Save DB** to save progress to JSON, and **▶ Patch MRG** once ready to generate a patched `script_text.mrg` ready to use in the game.
 
 ---
 
 ## CLI Tools
 
 ```bash
-python luna_cli.py --help     # export / import / patch tanpa GUI
-python luna_linter.py         # cek seluruh DB untuk masalah tag
+python luna_cli.py --help     # export / import / patch without GUI
+python luna_linter.py         # check the entire DB for tag issues
 ```
 
 ---
 
-## Referensi Tag
+## Tag Reference
 
-### Tag Format Terjemahan
+### Translation Format Tags
 
-Tag-tag ini ditulis di dalam teks terjemahan.
+These tags are written inside the translated text.
 
-| Tag | Efek | Catatan |
+| Tag | Effect | Notes |
 |-----|------|---------|
-| `%{i}…%{/i}` | Italic | Di-encode ke PUA di MRG final |
-| `%{g}…%{/g}` | Abu-abu / inner monologue | Harus diletakkan di awal entry |
-| `%{ri}…%{/ri}` | Reverse italic | Tulis teks normal, encoder yang membalik |
-| `%{b}…%{/b}` | Bold | Legacy — identik dengan italic di engine |
-| `%{u}…%{/u}` | Underline | Dihapus saat injeksi (engine tidak mendukung) |
-| `%{s}…%{/s}` | Strikethrough | Dihapus saat injeksi (engine tidak mendukung) |
-| `%{n}` | Paksa ganti baris | Menjadi `\r\n` di MRG |
-| `#` | Line glue | Menggabungkan dua entry MRG berurutan menjadi satu |
+| `%{i}…%{/i}` | Italic | Encoded to PUA in the final MRG |
+| `%{g}…%{/g}` | Gray / inner monologue | Must be placed at the start of the entry |
+| `%{ri}…%{/ri}` | Reverse italic | Write normal text; the encoder reverses it |
+| `%{b}…%{/b}` | Bold | Legacy — identical to italic in the engine |
+| `%{u}…%{/u}` | Underline | Removed during injection (engine doesn't support it) |
+| `%{s}…%{/s}` | Strikethrough | Removed during injection (engine doesn't support it) |
+| `%{n}` | Force line break | Becomes `\r\n` in the MRG |
+| `#` | Line glue | Merges two consecutive MRG entries into one |
 
 ### Ruby Text (Furigana)
 
 ```
-<teks|bacaan>
+<text|reading>
 ```
 
-**Contoh:** `<彼女|かのじょ>` akan merender 彼女 dengan かのじょ di atasnya.
+**Example:** `<彼女|かのじょ>` will render 彼女 with かのじょ displayed above it.
 
-> ⚠️ **Field bacaan (kanan dari `|`) dihapus saat injeksi ke MRG** — hanya teks tampilan yang masuk ke binary final. Jangan menaruh karakter ASCII di field bacaan karena akan menyebabkan **freeze** pada HuneX engine.
+>  **The reading field (right side of `|`) is removed during injection into the MRG** — only the display text makes it into the final binary. Do not put ASCII characters in the reading field, as this will cause a **freeze** on the HuneX engine.
 
-### Tag Game-Engine (dari teks JP asli)
+### Game-Engine Tags (from the original JP text)
 
-Tag ini sudah ada di teks sumber JP. Jangan diinject secara manual di terjemahan — gunakan tag format di atas sebagai gantinya.
+These tags already exist in the source JP text. Do not inject them manually into the translation — use the format tags above instead.
 
-| Tag | Fungsi |
-|-----|--------|
-| `@g` | Gaya abu-abu / inner monologue |
-| `@b` | Bold + abu-abu (selalu berpasangan dengan `@g`) |
-| `@t` | Tab / perataan kolom |
-| `@k` | Penanda jeda / tunggu |
-| `[ber00]` | Placeholder efek suara beep |
-| `[zap00]` | Placeholder efek suara zap |
-| `^` | Pemisah kolom / penekanan (tampilan pilihan ganda) |
-| `■` (U+25A0) | Teks yang sengaja dikosongkan / disensor |
+| Tag | Function |
+|-----|------|
+| `@g` | Gray style / inner monologue |
+| `@b` | Bold + gray (always paired with `@g`) |
+| `@t` | Tab / column alignment |
+| `@k` | Pause/wait marker |
+| `[ber00]` | Beep sound effect placeholder |
+| `[zap00]` | Zap sound effect placeholder |
+| `^` | Column separator / emphasis (multiple-choice display) |
+| `■` (U+25A0) | Intentionally blanked out / censored text |
 
 ---
 
-## Validasi Tag
+## Tag Validation
 
-`tag_validator.py` dijalankan otomatis sebelum injeksi MRG dan juga menjadi dasar fitur **Linter** (`Ctrl+L` di GUI).
+`tag_validator.py` runs automatically before MRG injection and also serves as the basis for the **Linter** feature (`Ctrl+L` in the GUI).
 
-| Tingkat | Contoh |
+| Level | Example |
 |---------|--------|
-| **CRITICAL** | Field bacaan ruby berisi ASCII → freeze engine |
-| **ERROR** | Tag `%{i}`, `%{g}`, `%{ri}` tidak ditutup; `%{ri}` bersarang |
-| **WARNING** | Ruby tanpa pemisah `\|`; `%{g}` dicampur `%{ri}`; string > 512 byte |
-| **INFO** | Tag ruby dihapus saat injeksi; `%{b}` identik dengan `%{i}` |
+| **CRITICAL** | Ruby reading field contains ASCII → engine freeze |
+| **ERROR** | `%{i}`, `%{g}`, `%{ri}` tags not closed; nested `%{ri}` |
+| **WARNING** | Ruby without `\|` separator; `%{g}` mixed with `%{ri}`; string > 512 bytes |
+| **INFO** | Ruby tag removed during injection; `%{b}` identical to `%{i}` |
 
 ---
 
-## Struktur File
+## File Structure
 
 ```
 deepLuna.py               ← entry point
-luna_cli.py               ← CLI headless
-luna_linter.py            ← linter terjemahan
-mrg_io.py                 ← parser & packer binary MZP
-pua_encode.py             ← encoding font PUA
-tag_validator.py          ← pemeriksa tag sebelum injeksi
-text_utils.py             ← registry tag & helper pencarian
-scene_map.json            ← pemetaan scene ke offset
+luna_cli.py               ← headless CLI
+luna_linter.py            ← translation linter
+mrg_io.py                 ← MZP binary parser & packer
+pua_encode.py             ← PUA font encoding
+tag_validator.py          ← tag checker before injection
+text_utils.py             ← tag registry & search helper
+scene_map.json            ← scene-to-offset mapping
 luna/
-  constants.py            ← path & konfigurasi
-  mrg_parser.py           ← parser container MZP
-  mzx.py                  ← dekompresor MZX
-  ruby_utils.py           ← logika ruby text & line-break
-  readable_exporter.py    ← format ekspor yang mudah dibaca
-  translation_db.py       ← inti DB (content-addressed by hash)
+  constants.py            ← paths & configuration
+  mrg_parser.py            ← MZP container parser
+  mzx.py                  ← MZX decompressor
+  ruby_utils.py            ← ruby text & line-break logic
+  readable_exporter.py    ← easy-to-read export format
+  translation_db.py       ← core DB (content-addressed by hash)
   ui/
-    modern_window.py      ← GUI utama
-    information_window.py ← dialog about
+    modern_window.py      ← main GUI
+    information_window.py ← about dialog
 tests/
   test_ruby_utils.py
   test_translation_db.py
@@ -131,6 +131,6 @@ tests/
 
 ---
 
-## Kredit
+## Credits
 
-Dibuat berdasarkan konsep dari toolchain asli milik [Tsukihimates](https://github.com/Tsukihimates/Tsukihime-Translation).
+Built based on concepts from the original toolchain by [Tsukihimates](https://github.com/Tsukihimates/Tsukihime-Translation).
