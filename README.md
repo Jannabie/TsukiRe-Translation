@@ -29,7 +29,7 @@ python deepLuna.py deepluna_db.json   # load an existing DB directly
 
 ## GUI Workflow
 
-After opening the application, there are two ways to start: if this is your first time, fill in the path to `allscr.mrg` and `script_text.mrg`, then click **⚙ Extract MRGs** to create a new database. If you already have a previous `deepluna_db.json` file, click **📂 Open DB** directly.
+After opening the application, there are two ways to start: if this is your first time, fill in the path to `allscr.mrg` and `script_text.mrg`, then click ** Extract MRGs** to create a new database. If you already have a previous `deepluna_db.json` file, click ** Open DB** directly.
 
 Select a scene from the left panel to load it into the grid. **Double-click** a translation cell to edit it inline — `Enter` to save, `Esc` to cancel, `Tab` to save and move to the next line.
 
